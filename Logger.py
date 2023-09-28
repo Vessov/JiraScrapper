@@ -1,7 +1,8 @@
 from datetime import datetime, date, timedelta
 import os
-import configparser
+import yaml
 
+# FIXME change logger to fit yaml config file
 
 levels = ["DEBUG", "RUN", "WARNING", "ERROR", "CRITICAL"]
 
@@ -25,12 +26,12 @@ class Logger:
     def __init__(self, rdir, level, dtformat=None, logsize=3000) -> None:
         self._root_dir = rdir
         self._logsize = logsize
-        self._filedir = self.get_filepath()
-        self.config_file = os.path.join(self._root_dir, "settings", "config.ini")
-        self.config = configparser.ConfigParser()
-        self.config.read(self.config_file)
+        self._filedir = self._get_filepath()
+        self.config_file = os.path.join(self._root_dir, "settings", "config.yaml")
+        with open(self.config_file, 'r') as file:
+            self.config = yaml.load(file, yaml.SafeLoader)
         if dtformat == None:
-            dtformat = self.config['DEFAULT']['dateformat']
+            dtformat = self.config['options']['dateformat']
 
         self._level = level
         
@@ -44,7 +45,7 @@ class Logger:
             case _:
                 self._date_format = r"%d/%m/%Y [%H:%M:%S] | "
 
-    def get_filepath(self) -> str:
+    def _get_filepath(self) -> str:
         # check what logfiles for current date exist and return path to the new one
         # by incrementing up to logfile_[date]-999.log
         today = date.today()
@@ -81,7 +82,7 @@ class Logger:
                 # and reset estimate to line 1
                 if self._curr_fileline > self._logsize:
                     self._curr_fileline = 1
-                    self._filedir = self.get_filepath()
+                    self._filedir = self._get_filepath()
 
         # increment rought estimate of on which file in line logger currently is
         self._curr_fileline += 1
