@@ -2,8 +2,6 @@ from datetime import datetime, date, timedelta
 import os
 import yaml
 
-# FIXME change logger to fit yaml config file
-
 levels = ["DEBUG", "RUN", "WARNING", "ERROR", "CRITICAL"]
 
 class Logger:
