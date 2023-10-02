@@ -1,2 +1,4 @@
 pyyaml
 jira
+keyring
+alive-progress
