@@ -10,6 +10,7 @@ root_dir = os.path.dirname(__file__)
 init_config_file = os.path.join(root_dir, "settings", "init_config copy.yaml")
 JIRA_NAMESPACE = 'JIRA'
 MAIL_NAMESPACE = "MAIL"
+DB_NAMESPACE = "DB"
 
 
 def set_jira_vars(api_key, server, mail):
@@ -48,6 +49,25 @@ def set_mail_vars(username, password, sender, receiver):
         assert check_pass == password
         assert check_sender == sender
         assert check_receiver == receiver
+        return True
+    except AssertionError as aerr:
+        print(aerr)
+        return False
+
+def set_database_vars(user, password, database):
+    
+    keyring.set_password(DB_NAMESPACE, "DB-USER", user)
+    keyring.set_password(DB_NAMESPACE, "DB-PASSWORD", password)
+    keyring.set_password(DB_NAMESPACE, "DB-DATABASE", database)
+
+    check_user = keyring.get_password(DB_NAMESPACE, "DB-USER")
+    check_password = keyring.get_password(DB_NAMESPACE, "DB-PASSWORD")
+    check_database = keyring.get_password(DB_NAMESPACE, "DB-DATABASE")
+
+    try:
+        assert check_user == user
+        assert check_password == password
+        assert check_database == database
         return True
     except AssertionError as aerr:
         print(aerr)
@@ -92,6 +112,16 @@ def obfuscate_init_config(filepath, rewrite_count:int=50):
                     "receiver": mail_receiver
                 }
 
+                db_user = get_rand_string(9)
+                db_pass = get_rand_string(10)
+                db_database = get_rand_string(12)
+
+                credentials['database'] = {
+                    'user': db_user,
+                    'password': db_pass,
+                    'database': db_database
+                }
+
                 yaml.dump(credentials, file)
                 time.sleep(0.01)
                 bar()
@@ -105,6 +135,7 @@ def keyring_setter(selfkill:bool=False):
         credentials:dict = init_config['credentials']
         jira_cred:dict = credentials['jira']
         mail_cred:dict = credentials['mail']
+        db_cred:dict = credentials['database']
 
         jira_api_key = jira_cred['APIKey']
         jira_server = jira_cred['server']
@@ -115,10 +146,15 @@ def keyring_setter(selfkill:bool=False):
         mail_sender = mail_cred["sender"]
         mail_receiver = mail_cred['receiver']
 
+        database_user = db_cred['user']
+        database_password = db_cred['password']
+        database_database = db_cred['database']
+
     jira_stat = set_jira_vars(jira_api_key, jira_server, jira_mail)
     mail_stat = set_mail_vars(mail_username, mail_password, mail_sender, mail_receiver)
+    db_stat = set_database_vars(database_user, database_password, database_database)
 
-    if jira_stat and mail_stat:
+    if jira_stat and mail_stat and db_stat:
         print("Correctly created keyring variables")
         print("Obfuscating initial config file before deletion")
         obfuscate_init_config(init_config_file)
@@ -145,6 +181,9 @@ if __name__ == "__main__":
         check_api = keyring.get_password(JIRA_NAMESPACE, "JIRA-API-KEY")
         check_server = keyring.get_password(JIRA_NAMESPACE, "JIRA-SERVER")
         check_mail = keyring.get_password(JIRA_NAMESPACE, "JIRA-MAIL")
+        check_db_user = keyring.get_password(DB_NAMESPACE, "DB-USER")
+        check_db_pass = keyring.get_password(DB_NAMESPACE, "DB-PASSWORD")
+        check_db_database = keyring.get_password(DB_NAMESPACE, "DB-DATABASE")
 
         print("Mail user:   ", check_user)
         print("Mail pass:   ", check_pass)
@@ -153,5 +192,8 @@ if __name__ == "__main__":
         print("Jira api:   ", check_api)
         print("Jira server:   ", check_server)
         print("Jira mail:   ", check_mail)
+        print("DB user:     ", check_db_user)
+        print("DB pass:     ", check_db_pass)
+        print("DB database:     ", check_db_database)
 
     _checker()
