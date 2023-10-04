@@ -12,7 +12,7 @@ logger = Logger(root_dir, "DEBUG")
 # define how the necessary tables are created
 standard_tables = {
     "Testers": "CREATE TABLE Testers (TesterID INT AUTO_INCREMENT PRIMARY KEY, Username VARCHAR(255), Name VARCHAR(255), Surname VARCHAR(255), Company VARCHAR(255))",
-    "Projects": "CREATE TABLE Projects (ProjectID INT AUTO_INCREMENT PRIMARY KEY, ProjectKey VARCHAR(255), ProviderID VARCHAR(255), DeviceType VARCHAR(255))",
+    "Projects": "CREATE TABLE Projects (ProjectID INT AUTO_INCREMENT PRIMARY KEY, ProjectKey VARCHAR(255), ProviderID VARCHAR(255), DeviceType VARCHAR(255), ProductID VARCHAR(255), ProjectName VARCHAR(255))",
     "Issues": "CREATE TABLE Issues (TestID INT AUTO_INCREMENT PRIMARY KEY, TestKey VARCHAR(255), TestType VARCHAR(255), DistChannel VARCHAR(255), TesterID INT, ProjectID INT, FOREIGN KEY (TesterID) REFERENCES testers(TesterID) , FOREIGN KEY (ProjectID) REFERENCES projects(ProjectID), Time FLOAT(4))"
 }
 
