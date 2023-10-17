@@ -1,4 +1,5 @@
 pyyaml
 jira
 keyring
+keyrings.cryptfile
 alive-progress
