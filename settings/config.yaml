@@ -1,0 +1,64 @@
+---
+options:
+  loglevel: DEBUG
+  dateformat: EU
+
+credentials:
+  jira:
+    APIKey: JIRA-API-KEY
+    server: JIRA-SERVER
+    mail: JIRA-MAIL
+
+  mail: 
+    host: #mailhost
+    port: #mailport
+    username: MAIL-USER
+    password: MAIL-PASS
+    sender: MAIL-SENDER
+    receiver: MAIL-RECEIVER
+
+  database:
+    host: localhost
+    user: DB-USER
+    password: DB-PASSWORD
+    database: DB-DATABASE
+
+tables:
+  - Testers
+  - Projects
+  - Issues
+
+testers:
+  doe_j:
+    name: John
+    surname: Doe
+    company: FooBarLab
+  bloggs_j:
+    name: Joe
+    surname: Bloggs
+    company: FooBarLab
+  public_j:
+    name: John
+    surname: Public
+    company: AcmeTech
+
+data:
+  projects:
+    FOO: 
+      name: Foobarium 1
+      ID: FOO112233
+    BAR: 
+      name: BazQuX Lite
+      ID: BAR998877
+    QUX: 
+      name: Barfoo
+      ID: QUX009955
+
+  developers:
+    NewCo:
+      - FOO
+      - BAR
+    FooTech:
+      - QUX
+  
+...
