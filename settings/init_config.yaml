@@ -17,4 +17,7 @@ credentials:
     password: password123
     database: testDB
 
+  enviromnent:
+    krcrypt: 123password
+
 ...

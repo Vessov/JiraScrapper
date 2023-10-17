@@ -23,6 +23,9 @@ credentials:
     password: DB-PASSWORD
     database: DB-DATABASE
 
+  environment:
+    krcrypt: KRCRYPT_PASS
+
 tables:
   - Testers
   - Projects
