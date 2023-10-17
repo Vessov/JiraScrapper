@@ -4,6 +4,16 @@ import yaml
 import keyring as kr
 from Logger import Logger
 
+system = os.name
+if system == "nt":
+    import keyring as kr
+elif system == "posix":
+    import keyring as kr
+    from keyrings.cryptfile.cryptfile import CryptFileKeyring
+    krcrypt = CryptFileKeyring()
+    krcrypt.keyring_key = os.getenv('KRCRYPT_PASS')
+    kr.set_keyring(krcrypt)
+
 root_dir = os.path.dirname(__file__)
 config_file = os.path.join(root_dir, "settings", "config.yaml")
 db_namespace = "DB"
@@ -58,16 +68,16 @@ except mysql.connector.errors.ProgrammingError as perr:
     logger.log("Connection not achieved", "ERROR")
     logger.log(f"Error message: '{perr}'", "ERROR")
 
-def update_tables():
+def update_tables(database:mysql.connector.MySQLConnection):
 
-    connected = db.is_connected()
+    connected = database.is_connected()
 
     if connected:
         logger.log("Connection achieved", "DEBUG")
-        server_info = db.get_server_info()
+        server_info = database.get_server_info()
         logger.log(f"Server info: {server_info}", "DEBUG")
 
-        cursor = db.cursor()
+        cursor = database.cursor()
         to_execute = []
         found_tables = []
 
@@ -95,12 +105,13 @@ def update_tables():
             logger.log("All tables present, disconnecting from database", "DEBUG")
         # terminate database connection
         db.disconnect()
+        return True
 
     else:
         logger.log("Connection broken/not established, unable to proceed", "ERROR")
 
 def main():
-    update_tables()
+    update_tables(db)
 
 if __name__ == "__main__":
     main()
