@@ -1,0 +1,20 @@
+---
+
+credentials:
+  jira:
+    APIKey: fOoBaR123XYZ456!@#qUxFOOBAR
+    server: https://foobar.atlassian.net
+    mail: foo.bar@acme.com
+
+  mail: 
+    username: johndoe
+    password: password123
+    sender: notifier@acme.com
+    receiver: johndoe@acme.com
+  
+  database:
+    user: doe_j
+    password: password123
+    database: testDB
+
+...
