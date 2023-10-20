@@ -1,9 +1,6 @@
 from jira import JIRA, Issue, JIRAError
 from Logger import Logger
-import yaml
-from pprint import pp
 
-# TODO implement some kind of email notifier
 
 class TestTypeIssue:
 
@@ -48,6 +45,11 @@ class Project:
         self.l.log(f"Initialization of project {self.key}", "RUN")
         self.errors = {}
 
+        def check_main_errors_dict():
+            check_main = self.errors.get('main')
+            if check_main is None:
+                self.errors['main'] = []
+
         # create nameMap to easily access custom fields returned form Jira
         allfields = self.j.fields()
         self.nameMap = {field['name']:field['id'] for field in allfields}
@@ -56,26 +58,48 @@ class Project:
         for developer, proj_list in developers_dict.items():
             if key in proj_list:
                 self.developer = developer
+
         #log results
         if self.developer is not None:
             self.l.log(f"Developer {self.developer} assigned to project {self.key}", "DEBUG")
         else:
-            self.errors["dev"] = f"No developer found for project {self.key}"
+            check_main_errors_dict()
+            self.errors["main"].append(2101)
             self.l.log(f"No matching developer found for project {self.key}!", "ERROR")
+            self.developer = "Unknown"
         
+        # check if project is present in config file
+        if self.key not in projects_dict.keys():
+            check_main_errors_dict()
+            self.errors["main"].append(2102)
+            self.l.log(f"Project with the key {self.key} is not present in the configuration file", "ERROR")
+            
+
         # get full name of the project
         for proj_key, proj_name in projects_dict.items():
             if self.key == proj_key:
                 self.name = proj_name['name']
+
         # log results
         if self.name is not None:
             self.l.log(f"Name {self.name} associated with project {self.key}", "DEBUG")
         else:
-            self.errors["name"] = f"Couldn't match any name with project {self.key}"
+            check_main_errors_dict()
+            self.errors["main"].append(2103)
             self.l.log(f"No matching name found for project {self.key}!", "ERROR")
     
+    def _add_error(self, epicKey:str, issueKey:str, errorCode:int):
+
+        if self.errors.get(epicKey) is None:
+            self.errors[epicKey] = {}
+        if issueKey not in self.errors[epicKey].keys():
+            self.errors[epicKey][issueKey] = []
+        if errorCode not in self.errors[epicKey][issueKey]:
+            self.errors[epicKey][issueKey].append(errorCode)
+
     def _get_parent(self, issueKey) -> Issue:
         try:
+
             self.l.log(f"Starting search for parent of issue {issueKey}", "DEBUG")
             issue = self.j.issue(issueKey)
             issueParent = issue.get_field("parent")
@@ -90,83 +114,98 @@ class Project:
             return epic
         
         except JIRAError as jerr:
-            parent_error_list = self.errors.get('parent')
-            if parent_error_list is None:
-                parent_error_list = []
-            error_message = f"Error encountered while searching for parent of {issueKey} in project {self.key}"
 
-            parent_error_list.append(error_message)
-            self.l.log(f"Error when getting parent of issue {issueKey}: {jerr}", "ERROR")
+            self._add_error("Unknown", issueKey, 2301)
+            self.l.log(f"Error when getting parent of issue {issueKey} in project {self.key}: {jerr}", "ERROR")
+            
             return None
 
     def _get_channel(self, issueKey, parent:Issue) -> str:
+
         epic = parent
 
         if epic is None:
+
             self.l.log(f"Can't find proper distribution channel due to lack of parent of issue {issueKey}", "ERROR")
-            self.errors['dist_channel'] = f"Can't establish distribution channel/SuperEpic for issue {issueKey} due to lack of epic"
+            self._add_error("Unknown", issueKey, 2401)
+
             return None
         
         self.l.log(f"Checking if {parent.key} is present in self.parents", "DEBUG")
+
         if epic.key in self.parents:
+
             epicdict:dict = self.parents[epic.key]
             chan_type = epicdict.get("channelType")
 
             if chan_type is not None:
+
                 self.l.log(f"Epic {epic.key} found, channel is {chan_type}", "DEBUG")
                 channeltype = chan_type
+
                 return channeltype
         
         else:
+
             self.l.log(f"Epic {epic.key} not in parents, or does not have associated channel type", "DEBUG")
 
         superEpicKey = None
         channeltype = None
+        inwardIssue_found = False
         
         self.l.log(f"Iterating over linked issues of epic {epic.key}", "DEBUG")
 
         for i in range(len(epic.fields.issuelinks)):
-            linkedIssueDict:dict = epic.raw['fields']['issuelinks'][i]
 
+            linkedIssueDict:dict = epic.raw['fields']['issuelinks'][i]
             
             if 'inwardIssue' in linkedIssueDict.keys():
+
+                inwardIssue_found = True
                 self.l.log(f"Found inward linked issue", "DEBUG")
                 linkedIssueType = linkedIssueDict['inwardIssue']['fields']['issuetype']['name']
 
                 if linkedIssueType == "SuperEpic":
+
                     self.l.log(f"Inward linked issue is confirmed as SuperEpic", "DEBUG")
                     superEpicKey = linkedIssueDict['inwardIssue']['key']
                     superEpic = self.j.issue(superEpicKey)
                     channeltype = superEpic.fields.summary
                     self.parents[epic.key]["channelType"] = channeltype
+
                     return channeltype
             
+        if inwardIssue_found == False:
+            self.l.log(f"Epic {parent.key} has no valid SuperEpic links", "ERROR")
+            self._add_error(parent.key, issueKey, 2402)
+            
         if superEpicKey is None or channeltype is None:
+
             self.l.log(f"Can't find proper distribution channel for issue {issueKey} and epic {epic.key}", "ERROR")
-
-            if self.errors.get('dist_channel') is None:
-                self.errors['dist_channel'] = []
-
-            self.errors['dist_channel'].append(f"Can't find distribution channel/SuperEpic for issue: {issueKey}, epic: {epic.key}")
+            self._add_error(parent.key, issueKey, 2403)
+            
             return None
 
     def _get_tester(self, issueKey) -> str:
+
         self.l.log(f"Starting search for tester assigned to issue {issueKey}", "DEBUG")
         issue = self.j.issue(issueKey)
 
         try:
+
             userlist = getattr(issue.fields, self.nameMap["Approvers"])
             user = userlist[0]
             tester = user.displayName
             self.l.log(f"Tester {tester} found assigned to issue {issueKey}", "DEBUG")
+            
             return tester
         
         except:
-            if self.errors.get('tester') is None:
-                self.errors['tester'] = []
-            
-            self.errors["tester"].append(f"Tester name not found in Approvers for issue {issueKey}")
+            issueParent = issue.get_field("parent")
+            parentKey = issueParent.key
+            self._add_error(parentKey, issueKey, 2501)
             self.l.log(f"No name found for tester in issue {issueKey}", "ERROR")
+            
             return None
 
     def gather_issues(self, limit:int=500):
@@ -175,7 +214,8 @@ class Project:
 
         jql_search = f'''project="{self.key}" AND issuetype = "Test Type"'''
 
-        # appending to list and then interating over the issues contained in that list is faster
+        # appending to list and then interating over the issues contained in that list is 30% faster
+        # than commencing any operations in the search_issues for loop
         for singleIssue in self.j.search_issues(jql_str=jql_search, maxResults=limit):
             issues.append(singleIssue)
         
@@ -183,11 +223,11 @@ class Project:
             issueKey = singleIssue.key
             issueName = singleIssue.fields.summary
             aggregateTime = singleIssue.raw['fields']['aggregatetimespent']
+
             if aggregateTime is None:
                 aggregateTime = 0
-            issueTime = round((int(aggregateTime) / 3600), 1)  # divide the aggregated time (which is in seconds) by 3600 to get hours and round to 1 decimal digit
-            
 
+            issueTime = round((int(aggregateTime) / 3600), 1)  # divide the aggregated time (which is in seconds) by 3600 to get hours and round to 1 decimal digit
             parentIssue = self._get_parent(issueKey)
 
             # check if parent issue in self.parents
@@ -197,6 +237,7 @@ class Project:
                 softver = epicdict.get("softVersion")
                 if softver is not None:
                     softVersion = softver
+
                 else:
                     parent_summary = parentIssue.fields.summary
                     softVersion = parent_summary.split(" ")[0]
