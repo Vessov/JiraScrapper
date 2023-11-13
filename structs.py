@@ -1,11 +1,16 @@
 from jira import JIRA, Issue, JIRAError
-from Logger import Logger
+from typing import Protocol
+
+
+class Logger(Protocol):
+    def log(self, message, level):
+        pass
 
 
 class TestTypeIssue:
 
     def __init__(self,
-                 logger,
+                 logger: Logger,
                  key:str,
                  test_type:str, 
                  channel:str, 
@@ -30,6 +35,7 @@ class TestTypeIssue:
 class Project:
     project_issues = []
     parents = {}
+    errors = {}
 
     def __init__(self,
                  logger:Logger,
@@ -43,7 +49,6 @@ class Project:
         self.developer = None
         self.name = None
         self.l.log(f"Initialization of project {self.key}", "RUN")
-        self.errors = {}
 
         def check_main_errors_dict():
             check_main = self.errors.get('main')
