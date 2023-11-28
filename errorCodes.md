@@ -29,9 +29,27 @@
   
 *Errors encountered during communication with MySQL database, inputting data in it, etc., mainly by `DBHandler.py`*
 
+|Error Code | Function | Description |
+|:---------:| :--------| :-----------|
+| 3201 | `_establish_connection()` | Can't correctly connect to database
+| 3301 | `_check_tables()` | Not all needed tables are present in the database
+| 3401 | `_check_issue_existence()` | More than one issue with this exact key <br> exists in the database |
+| 3501 | `get_singe_issue_info()` | **TBD** |
+| 3601 | `get_all_project_issues_info()` | No issues with the selected project prefix <br> were found |
+| 3602 | `get_all_project_issues_info()` | No issues with the selected project ID were found |
+| 3603 | `get_all_project_issues_info()` | Incorrect or no project prefix/ID |
+
+
 ## Jira handler errors - 4XXX
 
 *Errors encountered while communicating with Jira - mainly during data collection - by `JiraHandler.py`*
+
+|Error Code | Function | Description |
+|:---------:| :--------| :-----------|
+| 4201 | `_establish_connection()` | Incorrect authentication, HTTP status code 401 |
+| 4202 | `_establish_connection()` | Incorrect server address, HTTP status code 404 |
+| 4203 | `_establish_connection()` | Connection error, for details check log |
+
 
 
 ## Setup/repair errors - 9XXX
