@@ -27,9 +27,9 @@ credentials:
     krcrypt: KRCRYPT_PASS
 
 tables:
-  - Testers
-  - Projects
-  - Issues
+  - testers
+  - projects
+  - issues
 
 testers:
   doe_j:

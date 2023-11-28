@@ -3,7 +3,6 @@ import yaml
 import keyring as kr
 import mysql.connector
 from typing import Protocol
-from enum import Enum
 
 
 class Logger(Protocol):
@@ -14,7 +13,7 @@ class Logger(Protocol):
 class DBHandler:
     errors = {}
 
-    def __init__(self, logger:Logger, rdir) -> None:
+    def __init__(self, logger:Logger, rdir:str) -> None:
         self._root_dir = rdir
         self.l = logger
         self.db_namespace = "DB"
@@ -26,7 +25,7 @@ class DBHandler:
             if check_main is None:
                 self.errors['main'] = []
 
-        config_file = os.path.join(rdir, "settings", "config.yaml")
+        config_file = os.path.join(self._root_dir, "settings", "config.yaml")
 
         with open(config_file, 'r') as file:
             config = yaml.load(file, yaml.SafeLoader)
