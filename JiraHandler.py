@@ -19,25 +19,35 @@ class JiraHandler:
         self.jira_namespace = "JIRA"
 
         self.l.log("Initializing JIRA Connector class", "DEBUG")
+        try:
+            config_file = os.path.join(self._root_dir, "settings", "config.yaml")
 
-        config_file = os.path.join(self._root_dir, "settings", "config.yaml")
+            with open(config_file, 'r') as file:
+                config = yaml.load(file, yaml.SafeLoader)
+                credentials:dict = config["credentials"]
+                jira_creds:dict = credentials["jira"]
+                apiKey = jira_creds["APIKey"]
+                server = jira_creds["server"]
+                email = jira_creds["mail"]
 
-        with open(config_file, 'r') as file:
-            config = yaml.load(file, yaml.SafeLoader)
-            credentials:dict = config["credentials"]
-            jira_creds:dict = credentials["jira"]
-            apiKey = jira_creds["APIKey"]
-            server = jira_creds["server"]
-            email = jira_creds["mail"]
+            self.jira:JIRA = self._establish_connection(apiKey, server, email)
 
-        self.jira:JIRA = self._establish_connection(apiKey, server, email)
+            if isinstance(self.jira, JIRA):
+                allfields = self.jira.fields()
+                self.nameMap = {field['name']:field['id'] for field in allfields}
+            else:
+                self.errors["jira"] = 4102
+                self.l.log(f"Couldn't get correct JIRA object instance", "CRITICAL")
+        
+        except Exception as err:
+            self.errors["main"] = 4101
+            self.l.log(f"Couldn't complete instantiation", "CRITICAL")
+            self.l.log(f"Error message: {err}", "WARNING")
+            self.l.log(f"Config path: {config_file}", "WARNING")
+            self.l.log(f"Connector type: {type(self.jira)}", "WARNING")
 
-        if self.jira is not None:
-            allfields = self.jira.fields()
-            self.nameMap = {field['name']:field['id'] for field in allfields}
             
 
-    
     def _establish_connection(self, apiKey, server, email) -> JIRA | None:
         
         retrieved_apiKey = kr.get_password(self.jira_namespace, apiKey)
@@ -75,3 +85,4 @@ class JiraHandler:
                 self.l.log(f"URL: {url}", "WARNING")
             
             return None
+
