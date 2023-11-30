@@ -46,6 +46,8 @@
 
 |Error Code | Function | Description |
 |:---------:| :--------| :-----------|
+| 4101 | `__init_()` | Fatal instantiation error, check log |
+| 4102 | `__init_()` | Couldn't get correct JIRA object instance |
 | 4201 | `_establish_connection()` | Incorrect authentication, HTTP status code 401 |
 | 4202 | `_establish_connection()` | Incorrect server address, HTTP status code 404 |
 | 4203 | `_establish_connection()` | Connection error, for details check log |
