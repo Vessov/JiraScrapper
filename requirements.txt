@@ -3,3 +3,4 @@ jira
 keyring
 keyrings.cryptfile
 alive-progress
+mysql-connector-python
